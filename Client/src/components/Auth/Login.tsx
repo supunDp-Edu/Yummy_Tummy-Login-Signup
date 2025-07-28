@@ -15,8 +15,9 @@ const Login: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
- const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
+  
   if (!formData.email || !formData.password) {
     setError("Please fill in all fields.");
     return;
@@ -35,26 +36,41 @@ const Login: React.FC = () => {
     });
 
     const data = await response.json();
+    console.log("Full login response:", data);
 
     if (!response.ok) {
       throw new Error(data.error || "Login failed");
     }
 
+    // Verify we got all expected data
+    if (!data.user || !data.user.id || !data.user.email) {
+      throw new Error("Incomplete user data received");
+    }
+
+    // Store user data with fallbacks for missing fields
+    const userData = {
+      id: data.user.id,
+      username: data.user.username || 'Guest', // Provide default if missing
+      email: data.user.email,
+      mobile_number: data.user.mobile_number || '' // Provide default if missing
+    };
+
     localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("user", JSON.stringify(userData));
     
-    navigate("/");
+    // Redirect to home page
+    window.location.href = "/";
+    
   } catch (error) {
     if (error instanceof Error) {
       setError(error.message);
     } else {
-      setError("Login failed. Please try again.");
+      setError("Login failed");
     }
   } finally {
     setLoading(false);
   }
 };
-
 const handleGoogleSuccess = async (credentialResponse: any) => {
   try {
     const response = await fetch("http://localhost:5000/api/google-auth", {

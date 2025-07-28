@@ -6,7 +6,7 @@ import { useCart } from "../context/CartContext";
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null); // Changed from userEmail to username
   const [showDropdown, setShowDropdown] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ const Navbar: React.FC = () => {
     const userData = localStorage.getItem("user");
     if (userData) {
       const user = JSON.parse(userData);
-      setUserEmail(user.email);
+      setUsername(user.username); // Changed from user.email to user.username
     }
   }, [location]);
 
@@ -33,7 +33,7 @@ const Navbar: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    setUserEmail(null);
+    setUsername(null);
     setShowDropdown(false);
     navigate("/");
   };
@@ -108,7 +108,7 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
           <div className="auth-buttons">
-            {userEmail ? (
+            {username ? ( // Changed from userEmail to username
               <div style={{ position: "relative", display: "inline-block" }}>
                 <button
                   onClick={toggleDropdown}
@@ -126,7 +126,7 @@ const Navbar: React.FC = () => {
                   }}
                   onMouseEnter={() => setShowDropdown(true)}
                 >
-                  Hi, {userEmail.split("@")[0]}
+                  Hi, {username} {/* Displaying username directly */}
                 </button>
                 {showDropdown && (
                   <div

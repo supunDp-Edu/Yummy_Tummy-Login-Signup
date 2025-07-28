@@ -6,6 +6,8 @@ import { GoogleLogin } from "@react-oauth/google";
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
+    username: "",
+    mobile_number: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -30,89 +32,98 @@ const Signup: React.FC = () => {
     setPasswordValid(regex.test(password));
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!formData.email || !formData.password || !formData.confirmPassword) {
-    setError("Please fill in all fields.");
-    return;
-  }
-
-  validatePassword(formData.password);
-  if (!passwordValid) {
-    setError("Password does not meet the requirements.");
-    return;
-  }
-
-  if (formData.password !== formData.confirmPassword) {
-    setError("Passwords do not match.");
-    return;
-  }
-
-  setLoading(true);
-  setError("");
-
-  try {
-    const response = await fetch("http://localhost:5000/api/signup", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: formData.email,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Signup failed");
-    }
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    navigate("/login");
-  } catch (error) {
-    if (error instanceof Error) {
-      setError(error.message);
-    } else {
-      setError("An unexpected error occurred");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handleGoogleSuccess = async (credentialResponse: any) => {
-  try {
-    const response = await fetch("http://localhost:5000/api/google-auth", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ credential: credentialResponse.credential }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Google authentication failed");
+    // Validate all fields are filled
+    if (!formData.username || !formData.mobile_number || !formData.email || 
+        !formData.password || !formData.confirmPassword) {
+      setError("Please fill in all fields.");
+      return;
     }
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    
-    navigate("/");
-  } catch (error) {
-    if (error instanceof Error) {
-      setError(error.message);
-    } else {
-      setError("Google authentication failed");
+    // Validate mobile number format
+    const mobileRegex = /^[0-9]{10,15}$/;
+    if (!mobileRegex.test(formData.mobile_number)) {
+      setError("Please enter a valid 10-15 digit mobile number.");
+      return;
     }
-  }
-};
+
+    // Validate password requirements
+    validatePassword(formData.password);
+    if (!passwordValid) {
+      setError("Password does not meet the requirements.");
+      return;
+    }
+
+    // Validate password match
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("http://localhost:5000/api/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Signup failed");
+      }
+
+      // Store token and user data
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      
+      navigate("/login");
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred during signup");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/google-auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Google authentication failed");
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      
+      navigate("/");
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Google authentication failed");
+      }
+    }
+  };
 
   return (
     <div className="auth-container">
@@ -128,6 +139,30 @@ const handleGoogleSuccess = async (credentialResponse: any) => {
         <div className="auth-form-col">
           <h2>Sign Up</h2>
           <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="Username"
+                required
+                minLength={3}
+                maxLength={50}
+              />
+            </div>
+            <div className="form-group">
+              <input
+                type="tel"
+                name="mobile_number"
+                value={formData.mobile_number}
+                onChange={handleChange}
+                placeholder="Mobile Number (10-15 digits)"
+                required
+                pattern="[0-9]{10,15}"
+                title="Please enter 10-15 digits"
+              />
+            </div>
             <div className="form-group">
               <input
                 type="email"

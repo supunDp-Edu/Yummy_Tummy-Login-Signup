@@ -52,9 +52,10 @@ app.use(cors({
 
 // Routes
 app.post("/api/signup", async (req, res) => {
-  const { email, password, confirmPassword } = req.body;
+  const { username, mobile_number, email, password, confirmPassword } = req.body;
 
-  if (!email || !password || !confirmPassword) {
+  
+  if (!username || !mobile_number || !email || !password || !confirmPassword) {
     return res.status(400).json({ error: "Please fill in all fields." });
   }
 
@@ -69,37 +70,54 @@ app.post("/api/signup", async (req, res) => {
     });
   }
 
+  
+  const mobileRegex = /^[0-9]{10,15}$/;
+  if (!mobileRegex.test(mobile_number)) {
+    return res.status(400).json({ error: "Please enter a valid mobile number." });
+  }
+
   try {
+    // Check if email, username or mobile number already exists
     const [existingUsers] = await pool.query(
-      "SELECT * FROM users WHERE email = ?", 
-      [email]
+      `SELECT * FROM users WHERE email = ? OR username = ? OR mobile_number = ?`, 
+      [email, username, mobile_number]
     );
 
     if (existingUsers.length > 0) {
-      return res.status(409).json({ error: "Email already in use." });
+      const existingField = existingUsers[0].email === email ? 'email' : 
+                         existingUsers[0].username === username ? 'username' : 'mobile_number';
+      return res.status(409).json({ error: `${existingField} already in use.` });
     }
 
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const [result] = await pool.query(
-      "INSERT INTO users (email, password_hash) VALUES (?, ?)",
-      [email, hashedPassword]
+      "INSERT INTO users (username, mobile_number, email, password_hash) VALUES (?, ?, ?, ?)",
+      [username, mobile_number, email, hashedPassword]
     );
 
-    const token = generateToken({ id: result.insertId, email });
+    const token = generateToken({ 
+      id: result.insertId, 
+      username,
+      email 
+    });
 
     res.status(201).json({ 
       message: "Signup successful",
       token,
-      user: { id: result.insertId, email }
+      user: { 
+        id: result.insertId, 
+        username,
+        mobile_number,
+        email 
+      }
     });
   } catch (err) {
     console.error("Signup error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -108,35 +126,61 @@ app.post("/api/login", async (req, res) => {
   }
 
   try {
+    // Explicitly select the fields we need
     const [users] = await pool.query(
-      "SELECT * FROM users WHERE email = ?",
+      "SELECT id, username, email, mobile_number, password_hash FROM users WHERE email = ? LIMIT 1",
       [email]
     );
 
     if (users.length === 0) {
-      return res.status(401).json({ error: "Invalid email or password." });
+      return res.status(401).json({ error: "Invalid credentials." });
     }
 
     const user = users[0];
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
     
-    if (!passwordMatch) {
-      return res.status(401).json({ error: "Invalid email or password." });
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials." });
     }
 
-    const token = generateToken(user);
+    // Debug log - show exactly what we got from DB
+    console.log("User data from DB:", {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      mobile_number: user.mobile_number
+    });
 
-    res.json({ 
+    // Generate token
+    const token = generateToken({
+      id: user.id,
+      email: user.email,
+      username: user.username
+    });
+
+    // Prepare response data
+    const responseData = {
       message: "Login successful",
       token,
-      user: { id: user.id, email: user.email }
-    });
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        mobile_number: user.mobile_number
+      }
+    };
+
+    // Debug log - show what we're sending back
+    console.log("Sending response:", responseData);
+
+    res.json(responseData);
+
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 // Server status endpoint
 app.get("/api/status", async (req, res) => {
   try {
