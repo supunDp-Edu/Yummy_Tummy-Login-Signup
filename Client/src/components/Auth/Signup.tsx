@@ -129,7 +129,7 @@ const Signup: React.FC = () => {
 
   return (
     <div className="auth-container">
-      <h1 className="welcome-text floating-welcome">WELCOME TO YUMMY TUMMY</h1>
+      
       <div className="auth-box auth-box-split">
         <div className="auth-image-col">
           <img
