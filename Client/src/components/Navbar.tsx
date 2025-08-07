@@ -6,8 +6,10 @@ import { useCart } from "../context/CartContext";
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [username, setUsername] = useState<string | null>(null); // Changed from userEmail to username
+  const [username, setUsername] = useState<string | null>(null);
+  const [userPic, setUserPic] = useState<string>("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
   const isAuthPage =
@@ -18,7 +20,8 @@ const Navbar: React.FC = () => {
     const userData = localStorage.getItem("user");
     if (userData) {
       const user = JSON.parse(userData);
-      setUsername(user.username); // Changed from user.email to user.username
+      setUsername(user.username);
+      setUserPic(user.profilePic || `https://ui-avatars.com/api/?name=${user.username || "User"}`);
     }
   }, [location]);
 
@@ -48,39 +51,97 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const handleSearch = () => {
+    // For now, just log the search value
+    console.log("Search:", searchValue);
+  };
+
   return (
-    <nav className={`navbar ${isAuthPage ? "auth-page" : ""}`}>
-      <div className="navbar-brand">
-        <Link to="/" className="logo">
+    <nav className={`navbar ${isAuthPage ? "auth-page" : ""}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#333', color: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', minHeight: 64 }}>
+      {/* Left side: Logo, Home, Menu */}
+      <div className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+        <Link to="/" className="logo" style={{ display: 'flex', alignItems: 'center' }}>
           <img src={logo} alt="Yummy Tummy Logo" className="logo-image" />
         </Link>
+        {!isAuthPage && (
+          <>
+            <Link to="/" className="nav-btn" style={{ marginLeft: 16 }}>Home</Link>
+            <Link to="/menu" className="nav-btn" style={{ marginLeft: 8 }}>Menu</Link>
+          </>
+        )}
         {!isAuthPage && (
           <button className="menu-toggle" onClick={toggleMenu}>
             <span className="menu-icon"></span>
           </button>
         )}
       </div>
+      {/* Centered search bar */}
       {!isAuthPage && (
-        <div className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
-          <Link to="/" className="nav-link">
-            Home
-          </Link>
-          <Link to="/menu" className="nav-link">
-            Menu
-          </Link>
-          <Link to="/about" className="nav-link">
-            About Us
-          </Link>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ position: 'relative', width: 520 }}>
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchValue}
+              onChange={e => setSearchValue(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+              style={{
+                width: 520,
+                padding: '8px 40px 8px 16px',
+                borderRadius: 20,
+                border: '1px solid #ddd',
+                fontSize: 16,
+                outline: 'none',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
+              }}
+            />
+            <span
+              style={{
+                position: 'absolute',
+                right: 16,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: 20,
+                color: '#aaa',
+                cursor: 'pointer',
+                userSelect: 'none'
+              }}
+              onClick={handleSearch}
+            >
+              🔍
+            </span>
+          </div>
+        </div>
+      )}
+      {/* Right side: About Us, Cart, Profile/Login */}
+      {!isAuthPage && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <Link to="/about" className="nav-btn">About Us</Link>
           <div className="navbar-cart">
             <Link
               to="/cart"
-              style={{ position: "relative", display: "inline-block" }}
+              style={{
+                position: "relative",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: '#fff',
+                borderRadius: '18px',
+                width: 34,
+                height: 34,
+                border: '1px solid #eee',
+                margin: '0 4px',
+                transition: 'box-shadow 0.2s',
+                outline: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 576 512"
-                width="32"
-                height="32"
+                width="20"
+                height="20"
                 fill="#222"
               >
                 <path d="M528.12 301.319l47.273-208A16 16 0 0 0 560 80H120l-9.4-47.319A16 16 0 0 0 95 32H16A16 16 0 0 0 0 48v16a16 16 0 0 0 16 16h66.1l61.6 310.319A63.994 63.994 0 1 0 256 464h192a64 64 0 1 0 62.1-80.681zM120 128h400.319l-40.319 176H159.319zM256 416a32 32 0 1 1-32-32 32 32 0 0 1 32 32zm192 0a32 32 0 1 1-32-32 32 32 0 0 1 32 32z" />
@@ -89,8 +150,8 @@ const Navbar: React.FC = () => {
                 <span
                   style={{
                     position: "absolute",
-                    top: -6,
-                    right: -6,
+                    top: 2,
+                    right: 2,
                     background: "#ff6b6b",
                     color: "#fff",
                     borderRadius: "50%",
@@ -107,68 +168,17 @@ const Navbar: React.FC = () => {
               )}
             </Link>
           </div>
-          <div className="auth-buttons">
-            {username ? ( // Changed from userEmail to username
-              <div style={{ position: "relative", display: "inline-block" }}>
-                <button
-                  onClick={toggleDropdown}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#333",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    padding: "8px 16px",
-                    borderRadius: "4px",
-                    transition: "all 0.3s ease",
-                    fontSize: "inherit",
-                    fontFamily: "inherit",
-                  }}
-                  onMouseEnter={() => setShowDropdown(true)}
-                >
-                  Hi, {username} {/* Displaying username directly */}
-                </button>
-                {showDropdown && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: 0,
-                      backgroundColor: "white",
-                      minWidth: "160px",
-                      boxShadow: "0px 8px 16px 0px rgba(0,0,0,0.2)",
-                      zIndex: 1,
-                      borderRadius: "4px",
-                      overflow: "hidden",
-                    }}
-                    onMouseLeave={() => setShowDropdown(false)}
-                  >
-                    <button
-                      onClick={handleLogout}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        textAlign: "left",
-                        border: "none",
-                        background: "none",
-                        cursor: "pointer",
-                        color: "#333",
-                        fontSize: "14px",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#f8f8f8";
-                        (e.currentTarget as HTMLButtonElement).style.color = "#e74c3c";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.backgroundColor = "white";
-                        (e.currentTarget as HTMLButtonElement).style.color = "#333";
-                      }}
-                    >
-                      Sign Out
-                    </button>
-                  </div>
+          <div className="auth-buttons" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {username ? (
+              <Link to="/profile">
+                {userPic && (
+                  <img
+                    src={userPic}
+                    alt="Profile"
+                    style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #fff', background: '#eee' }}
+                  />
                 )}
-              </div>
+              </Link>
             ) : (
               <Link
                 to="/login"

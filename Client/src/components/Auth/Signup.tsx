@@ -6,8 +6,10 @@ import { GoogleLogin } from "@react-oauth/google";
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
-    username: "",
+    first_name: "",
+    last_name: "",
     mobile_number: "",
+    gender: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -36,7 +38,7 @@ const Signup: React.FC = () => {
     e.preventDefault();
     
     // Validate all fields are filled
-    if (!formData.username || !formData.mobile_number || !formData.email || 
+    if (!formData.first_name || !formData.last_name || !formData.mobile_number || !formData.email || !formData.gender || 
         !formData.password || !formData.confirmPassword) {
       setError("Please fill in all fields.");
       return;
@@ -142,10 +144,22 @@ const Signup: React.FC = () => {
             <div className="form-group">
               <input
                 type="text"
-                name="username"
-                value={formData.username}
+                name="first_name"
+                value={formData.first_name}
                 onChange={handleChange}
-                placeholder="Username"
+                placeholder="First_Name"
+                required
+                minLength={3}
+                maxLength={50}
+              />
+            </div>
+            <div className="form-group">
+              <input
+                type="text"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                placeholder="Last_Name"
                 required
                 minLength={3}
                 maxLength={50}
@@ -170,6 +184,16 @@ const Signup: React.FC = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Email"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <input
+                type="gender"
+                name="gender"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Gender"
                 required
               />
             </div>
